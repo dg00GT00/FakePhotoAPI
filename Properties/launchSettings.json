@@ -16,9 +16,8 @@
                 "ASPNETCORE_ENVIRONMENT": "Development"
             }
         },
-        "fakephoto": {
+        "FakePhoto": {
           "commandName": "Project",
-          "launchBrowser": true,
           "applicationUrl": "http://localhost:5000",
           "environmentVariables": {
             "ASPNETCORE_ENVIRONMENT": "Development"

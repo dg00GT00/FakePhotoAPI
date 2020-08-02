@@ -1,6 +1,9 @@
 using System;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using FakePhoto.Models;
+using FakePhoto.Services;
+using FakePhoto.Services.ImageSourceService;
+using FakePhoto.Services.ImageSourceService.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FakePhoto.Controllers
@@ -14,19 +17,17 @@ namespace FakePhoto.Controllers
 
         public FakePhotoController(IFakePhotoService fakePhotoService, IImageSourceService imageSourceService)
         {
-            imageSourceService.ImageType = ImageType.Png;
-            imageSourceService.CreateImageDirectory("FakeImagesDir");
             _fakePhotoService = fakePhotoService;
             _imageSourceService = imageSourceService;
         }
 
-        [HttpGet("/")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Get()
+        [HttpGet("{width}x{height}")]
+        public async Task<IActionResult> Get([FromRoute] DimensionsModel dimensionsModel)
         {
-            var result = await _fakePhotoService.GetBytePhotoByDimensions(new Tuple<int, int>(0, 300));
-            await _imageSourceService.WriteImageFileAsync("other", result);
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var dimensions = new Tuple<int, int>(dimensionsModel.Width, dimensionsModel.Height);
+            var result = await _fakePhotoService.GetBytePhotoByDimensions(dimensions);
+            await _imageSourceService.WriteImageFileAsync(dimensions, result);
             return Ok();
         }
     }
