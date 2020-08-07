@@ -10,7 +10,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="FakeImagesDir" />
         <Folder Include="wwwroot\FakeImagesDir" />
     </ItemGroup>
 

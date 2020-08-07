@@ -30,5 +30,6 @@ namespace FakePhoto.Controllers
             await _imageSourceService.WriteImageFileAsync(dimensions, result);
             return Ok();
         }
+        
     }
 }

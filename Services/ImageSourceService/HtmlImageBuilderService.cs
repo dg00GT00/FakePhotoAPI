@@ -12,6 +12,7 @@ namespace FakePhoto.Services.ImageSourceService
             var tag = new TagBuilder("img");
             tag.TagRenderMode = TagRenderMode.SelfClosing;
             tag.MergeAttribute("src", imagePath);
+            tag.MergeAttribute("alt", "fake image placeholder");
             using var stringWriter = new StringWriter();
             tag.WriteTo(stringWriter, HtmlEncoder.Default);
             return stringWriter.ToString();

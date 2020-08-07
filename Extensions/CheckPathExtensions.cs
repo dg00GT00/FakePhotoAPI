@@ -15,7 +15,7 @@ namespace FakePhoto.Extensions
             var imagePath = Directory.Exists(image.DirPath)
                 ? Path.Combine(image.DirPath, imageFullName)
                 : string.Empty;
-            if (string.IsNullOrEmpty(imagePath)) throw new FileNotFoundException();
+            if (string.IsNullOrEmpty(imagePath)) throw new FileNotFoundException(imageFullName);
             return imageAction(imagePath);
         }
 
