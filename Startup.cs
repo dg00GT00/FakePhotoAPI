@@ -1,14 +1,11 @@
 using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using FakePhoto.Extensions;
 using FakePhoto.Services;
+using FakePhoto.Services.ETagGeneratorService;
+using FakePhoto.Services.ETagGeneratorService.Interfaces;
 using FakePhoto.Services.ImageSourceService;
 using FakePhoto.Services.ImageSourceService.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -29,6 +26,12 @@ namespace FakePhoto
         {
             services.AddControllers();
             // services.AddResponseCaching();
+            services.AddSingleton<IStoreKeyGenerator, DefaultStoreKeyGenerator>();
+            services.AddSingleton<IETagGenerator, DefaultETagGenerator>(provider =>
+            {
+                var storeKeyGenerator = provider.GetRequiredService<IStoreKeyGenerator>();
+                return new DefaultETagGenerator(storeKeyGenerator);
+            });
             services.AddSingleton<IImageBuilderService, HtmlImageBuilderService>();
             services.AddSingleton<IImageSourceService, ImageSourceService>(provider =>
             {
@@ -52,14 +55,11 @@ namespace FakePhoto
             {
                 app.UseExceptionHandler("/Error");
             }
-
             // app.UseHttpsRedirection();
 
             app.UseRouting();
 
             // app.UseAuthorization();
-
-            // app.UseImageCache();
 
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }

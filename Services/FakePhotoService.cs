@@ -7,7 +7,7 @@ namespace FakePhoto.Services
 {
     public interface IFakePhotoService
     {
-        Task<byte[]> GetBytePhotoByDimensions(Tuple<int, int> dimensions);
+        Task<byte[]> GetBytePhotoByDimensionsAsync(Tuple<int, int> dimensions);
 
         public static void InitClient(HttpClient client)
         {
@@ -33,7 +33,7 @@ namespace FakePhoto.Services
             IFakePhotoService.InitClient(client);
         }
 
-        public async Task<byte[]> GetBytePhotoByDimensions(Tuple<int, int> dimensions)
+        public async Task<byte[]> GetBytePhotoByDimensionsAsync(Tuple<int, int> dimensions)
         {
             var response = await _client.GetAsync($"{dimensions.Item1}x{dimensions.Item2}/");
             return await response.Content.ReadAsByteArrayAsync();

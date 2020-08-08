@@ -7,8 +7,9 @@ namespace FakePhoto.Services.ImageSourceService.Interfaces
     {
         ImageType ImageType { get; set; }
         string DirPath { get; set; }
-        Task WriteImageFileAsync(string imageName, byte[] imageContent);
-        Task WriteImageFileAsync(Tuple<int, int> dimensions, byte[] imageContent);
-        Task<string> ImageBuilderAsync(string imagePath);
+        Task<string> GetImageFullPath(string imageName);
+        Task<string> WriteImageFileAsync(string imageName, byte[] imageContent);
+        Task<string> WriteImageFileAsync(Tuple<int, int> dimensions, byte[] imageContent);
+        string GenerateImageTag(string imagePath);
     }
 }

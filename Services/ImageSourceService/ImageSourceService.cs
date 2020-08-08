@@ -12,6 +12,7 @@ namespace FakePhoto.Services.ImageSourceService
         public ImageType ImageType { get; set; }
         public string DirPath { get; set; }
 
+
         public ImageSourceService(IImageBuilderService imageBuilder, string dirName, ImageType imageType)
         {
             ImageBuilder = imageBuilder;
@@ -21,36 +22,38 @@ namespace FakePhoto.Services.ImageSourceService
 
         private void CreateImageDirectory(string dirName)
         {
-            var baseFolder = Environment.CurrentDirectory;
-            DirPath = Path.Combine(baseFolder!, dirName);
+            DirPath = Path.Combine(Environment.CurrentDirectory, dirName);
             if (!Directory.Exists(DirPath))
             {
                 Directory.CreateDirectory(dirName);
             }
         }
 
-        public async Task WriteImageFileAsync(string imageName, byte[] imageContent)
+        public async Task<string> GetImageFullPath(string imageName)
         {
-            await this.CheckAbsolutePathName(imageName, async s =>
+            return await this.CheckAbsolutePathName(imageName,
+                s => { return Task.FromResult(Path.Combine(DirPath, s)); });
+        }
+
+        public async Task<string> WriteImageFileAsync(string imageName, byte[] imageContent)
+        {
+            return await this.CheckAbsolutePathName(imageName, async s =>
             {
                 using var image = File.Create(s);
                 await image.WriteAsync(imageContent, 0, imageContent.Length);
-                return Task.CompletedTask;
+                return await GetImageFullPath(s);
             });
         }
 
-        public async Task WriteImageFileAsync(Tuple<int, int> dimensions, byte[] imageContent)
+        public async Task<string> WriteImageFileAsync(Tuple<int, int> dimensions, byte[] imageContent)
         {
             var parsedFileName = string.Format("{0}x{1}", dimensions.Item1, dimensions.Item2);
-            await WriteImageFileAsync(parsedFileName, imageContent);
+            return await WriteImageFileAsync(parsedFileName, imageContent);
         }
 
-        public async Task<string> ImageBuilderAsync(string imagePath)
+        public string GenerateImageTag(string imagePath)
         {
-            return await this.CheckAbsolutePathName(imagePath, s =>
-            {
-                return Task.FromResult(ImageBuilder.BuildImageTag(s));
-            });
+            return ImageBuilder.BuildImageTag(imagePath);
         }
     }
 }

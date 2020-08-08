@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -20,11 +21,29 @@ namespace FakePhoto.Filters
         private readonly ILogger<ImageCacheFilter> _logger;
         private readonly IETagGenerator _eTagGenerator;
 
-        private readonly HttpMethod[] _supportedMethods =
+        private readonly HttpMethod[] _supportedMethods = {HttpMethod.Get, HttpMethod.Head};
+
+        public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            HttpMethod.Get,
-            HttpMethod.Head
-        };
+            var ctx = context.HttpContext;
+            if (CheckSupportedMethods(ctx))
+            {
+                var (imageName, imagePath) = await GetImageSpecsAsync(ctx);
+                if (File.Exists(imagePath))
+                {
+                    _logger.LogInformation("Returned {ImageName} from cache",
+                        _imageSource.ImageNameWithExtension(imageName));
+                    var image = _imageSource.GenerateImageTag(imagePath);
+                    GenerateCacheHeadersAsync(ctx, image);
+                    // await GenerateETagHeaderAsync(ctx);
+                    context.Result = new ContentResult {Content = image, ContentType = "text/html"};
+                }
+                else
+                {
+                    await next();
+                }
+            }
+        }
 
         public ImageCacheFilter(IImageSourceService imageSource, ILogger<ImageCacheFilter> logger,
             IETagGenerator eTagGenerator)
@@ -34,27 +53,17 @@ namespace FakePhoto.Filters
             _eTagGenerator = eTagGenerator;
         }
 
-        public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
-        {
-            var ctx = context.HttpContext;
-            if (CheckSupportedMethods(ctx))
-            {
-                var imageName = GetFullImagePath(ctx, out var imagePath);
-                if (File.Exists(imagePath))
-                {
-                    _logger.LogInformation("Returned {ImageName} from cache image file", imageName);
-                    var image = await _imageSource.ImageBuilderAsync(imagePath);
-                    GenerateCacheHeaders(ctx, image);
-                    context.Result = new OkObjectResult(image);
-                }
-            }
-        }
-
-        private async void GenerateCacheHeaders(HttpContext context, string content)
+        private async void GenerateCacheHeadersAsync(HttpContext context, string content)
         {
             context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue {Public = true};
-            context.Response.GetTypedHeaders().ContentType = new MediaTypeHeaderValue("text/html");
+            // context.Response.GetTypedHeaders().ContentType = new MediaTypeHeaderValue("text/html");
             context.Response.GetTypedHeaders().ContentLength = Encoding.ASCII.GetBytes(content).LongLength;
+            await GenerateETagHeaderAsync(context);
+            context.Response.Headers[HeaderNames.Vary] = new[] {"User-Agent", "Accept-Encoding"};
+        }
+
+        private async Task GenerateETagHeaderAsync(HttpContext context)
+        {
             context.Response.GetTypedHeaders().ETag = await _eTagGenerator.GenerateETag(context);
         }
 
@@ -68,11 +77,18 @@ namespace FakePhoto.Filters
             return true;
         }
 
-        private string GetFullImagePath(HttpContext context, out string imagePath)
+        private async Task<Tuple<string, string>> GetImageSpecsAsync(HttpContext context)
         {
             var imageName = context.Request.Path.Value.Split('/').Last();
-            imagePath = Path.Combine(_imageSource.DirPath, _imageSource.ImageNameWithExtension(imageName));
-            return imageName;
+            var imagePath = await _imageSource.GetImageFullPath(imageName);
+            return new Tuple<string, string>(imageName, imagePath);
+        }
+    }
+
+    class GenerateETagAttribute : TypeFilterAttribute
+    {
+        public GenerateETagAttribute() : base(typeof(ImageCacheFilter))
+        {
         }
     }
 }

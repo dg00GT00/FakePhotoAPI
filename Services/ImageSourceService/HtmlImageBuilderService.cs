@@ -9,8 +9,7 @@ namespace FakePhoto.Services.ImageSourceService
     {
         public string BuildImageTag(string imagePath)
         {
-            var tag = new TagBuilder("img");
-            tag.TagRenderMode = TagRenderMode.SelfClosing;
+            var tag = new TagBuilder("img") {TagRenderMode = TagRenderMode.SelfClosing};
             tag.MergeAttribute("src", imagePath);
             tag.MergeAttribute("alt", "fake image placeholder");
             using var stringWriter = new StringWriter();

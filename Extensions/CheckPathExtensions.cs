@@ -10,11 +10,11 @@ namespace FakePhoto.Extensions
         public static Task<T> CheckAbsolutePathName<T>(this IImageSourceService image, string imageName,
             Func<string, Task<T>> imageAction)
         {
-            var imageFullName = ImageNameWithExtension(image, imageName);
+            var imageNameWithExtension = ImageNameWithExtension(image, imageName);
             var imagePath = Directory.Exists(image.DirPath)
-                ? Path.Combine(image.DirPath, imageFullName)
+                ? Path.Combine(image.DirPath, imageNameWithExtension)
                 : string.Empty;
-            if (string.IsNullOrEmpty(imagePath)) throw new FileNotFoundException(imageFullName);
+            if (string.IsNullOrEmpty(imagePath)) throw new FileNotFoundException(imageNameWithExtension);
             return imageAction(imagePath);
         }
 

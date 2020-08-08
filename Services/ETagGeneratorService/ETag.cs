@@ -1,16 +1,17 @@
-﻿using Microsoft.Net.Http.Headers;
+﻿using Microsoft.Extensions.Primitives;
+using Microsoft.Net.Http.Headers;
 
 namespace FakePhoto.Services.ETagGeneratorService
 {
     public class ETag
     {
         public ETagType ETagType { get; }
-        public string Value { get; }
+        public StringSegment Value { get; }
 
         public ETag(ETagType eTagType, string value)
         {
             ETagType = eTagType;
-            Value = value;
+            Value = new StringSegment($"\"{value}\"");
         }
 
         public EntityTagHeaderValue GetETag()
