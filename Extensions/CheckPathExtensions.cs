@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using FakePhoto.Services.ImageSourceService;
 using FakePhoto.Services.ImageSourceService.Interfaces;
 
 namespace FakePhoto.Extensions
