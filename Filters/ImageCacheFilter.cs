@@ -23,6 +23,14 @@ namespace FakePhoto.Filters
 
         private readonly HttpMethod[] _supportedMethods = {HttpMethod.Get, HttpMethod.Head};
 
+        public ImageCacheFilter(IImageSourceService imageSource, ILogger<ImageCacheFilter> logger,
+            IETagGenerator eTagGenerator)
+        {
+            _imageSource = imageSource;
+            _logger = logger;
+            _eTagGenerator = eTagGenerator;
+        }
+
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             var ctx = context.HttpContext;
@@ -43,14 +51,6 @@ namespace FakePhoto.Filters
                     await next();
                 }
             }
-        }
-
-        public ImageCacheFilter(IImageSourceService imageSource, ILogger<ImageCacheFilter> logger,
-            IETagGenerator eTagGenerator)
-        {
-            _imageSource = imageSource;
-            _logger = logger;
-            _eTagGenerator = eTagGenerator;
         }
 
         private async void GenerateCacheHeadersAsync(HttpContext context, string content)
