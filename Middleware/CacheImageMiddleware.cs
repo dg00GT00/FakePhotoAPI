@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using FakePhoto.Extensions;
 using FakePhoto.Services.ImageSourceService.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -28,7 +29,7 @@ namespace FakePhoto.Middleware
             if (File.Exists(imagePath))
             {
                 _logger.LogInformation("Returned {ImageName} from cache",
-                    _imageSource.ImageNamthExtension(imageName));
+                    _imageSource.ImageNameWithExtension(imageName));
                 await _next(context);
             }
         }
