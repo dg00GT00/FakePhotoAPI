@@ -10,20 +10,22 @@ using FakePhoto.Services.ImageSourceService.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.ResponseCaching;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 
 namespace FakePhoto.Filters
 {
-    public class ImageCacheFilter : IAsyncActionFilter
+    public class GeneralCacheFilter : IAsyncActionFilter
     {
         private readonly IImageSourceService _imageSource;
-        private readonly ILogger<ImageCacheFilter> _logger;
+        private readonly ILogger<GeneralCacheFilter> _logger;
         private readonly IETagGenerator _eTagGenerator;
-
         private readonly HttpMethod[] _supportedMethods = {HttpMethod.Get, HttpMethod.Head};
+        public string[] VaryByQueryKeys { get; set; } = {"width", "height"};
+        public int MaxAge { get; set; } = 10;
 
-        public ImageCacheFilter(IImageSourceService imageSource, ILogger<ImageCacheFilter> logger,
+        public GeneralCacheFilter(IImageSourceService imageSource, ILogger<GeneralCacheFilter> logger,
             IETagGenerator eTagGenerator)
         {
             _imageSource = imageSource;
@@ -36,35 +38,35 @@ namespace FakePhoto.Filters
             var ctx = context.HttpContext;
             if (CheckSupportedMethods(ctx))
             {
-                var (imageName, imagePath) = await GetImageSpecsAsync(ctx);
-                if (File.Exists(imagePath))
+                try
                 {
+                    var (imageName, imagePath) = await GetImageSpecsAsync(ctx);
                     _logger.LogInformation("Returned {ImageName} from cache",
                         _imageSource.ImageNameWithExtension(imageName));
                     var image = _imageSource.GenerateImageTag(imagePath);
-                    GenerateCacheHeadersAsync(ctx, image);
                     // await GenerateETagHeaderAsync(ctx);
                     context.Result = new ContentResult {Content = image, ContentType = "text/html"};
                 }
-                else
+                catch (FileNotFoundException)
                 {
                     await next();
+                    GenerateCacheHeadersAsync(ctx);
                 }
             }
         }
 
-        private async void GenerateCacheHeadersAsync(HttpContext context, string content)
+        private async void GenerateCacheHeadersAsync(HttpContext context)
         {
-            context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue {Public = true};
+            context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
+            {
+                Public = true,
+                MaxAge = TimeSpan.FromSeconds(MaxAge)
+            };
             // context.Response.GetTypedHeaders().ContentType = new MediaTypeHeaderValue("text/html");
-            context.Response.GetTypedHeaders().ContentLength = Encoding.ASCII.GetBytes(content).LongLength;
-            await GenerateETagHeaderAsync(context);
-            context.Response.Headers[HeaderNames.Vary] = new[] {"User-Agent", "Accept-Encoding"};
-        }
-
-        private async Task GenerateETagHeaderAsync(HttpContext context)
-        {
+            // context.Response.GetTypedHeaders().ContentLength = Encoding.ASCII.GetBytes(content).LongLength;
             context.Response.GetTypedHeaders().ETag = await _eTagGenerator.GenerateETag(context);
+            var responseCachingFeature = context.Features.Get<IResponseCachingFeature>();
+            responseCachingFeature.VaryByQueryKeys = VaryByQueryKeys;
         }
 
         private bool CheckSupportedMethods(HttpContext context)
@@ -85,9 +87,9 @@ namespace FakePhoto.Filters
         }
     }
 
-    class GenerateETagAttribute : TypeFilterAttribute
+    class GeneralCacheAttribute : TypeFilterAttribute
     {
-        public GenerateETagAttribute() : base(typeof(ImageCacheFilter))
+        public GeneralCacheAttribute() : base(typeof(GeneralCacheFilter))
         {
         }
     }

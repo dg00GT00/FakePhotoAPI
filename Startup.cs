@@ -25,7 +25,7 @@ namespace FakePhoto
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            // services.AddResponseCaching();
+            services.AddResponseCaching();
             services.AddSingleton<IStoreKeyGenerator, DefaultStoreKeyGenerator>();
             services.AddSingleton<IETagGenerator, DefaultETagGenerator>(provider =>
             {
@@ -59,7 +59,7 @@ namespace FakePhoto
 
             app.UseStaticFiles();
             app.UseRouting();
-
+            app.UseResponseCaching();
             // app.UseAuthorization();
 
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });

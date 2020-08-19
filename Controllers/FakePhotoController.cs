@@ -21,8 +21,9 @@ namespace FakePhoto.Controllers
             _imageSourceService = imageSourceService;
         }
 
-        [HttpGet("{width}x{height}"), GenerateETag]
-        public async Task<IActionResult> Get([FromRoute] DimensionsModel dimensionsModel)
+        [HttpGet]
+        [GeneralCache]
+        public async Task<IActionResult> Get([FromQuery] DimensionsModel dimensionsModel)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var dimensions = new Tuple<int, int>(dimensionsModel.Width, dimensionsModel.Height);
